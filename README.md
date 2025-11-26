@@ -157,10 +157,54 @@ The application uses SQLite database stored in `products.db` file in the backend
 - Progress tracking updates every 500ms
 - Webhooks are triggered asynchronously without blocking
 
+## Deployment on Render
+
+### Backend Deployment
+
+1. Create a new Web Service on Render
+2. Connect your GitHub repository
+3. Configure the service:
+   - **Build Command**: `cd backend && pip install -r requirements.txt`
+   - **Start Command**: `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Environment**: Python 3.13
+
+4. Add environment variable (optional):
+   - `RENDER_SERVICE_URL`: Your Render service URL (for keep-alive)
+   - `SERVER_URL`: Alternative to RENDER_SERVICE_URL
+
+### Preventing Server Spin-Down
+
+Render's free tier spins down inactive servers after 15 minutes. To prevent this:
+
+**Option 1: Use the built-in keep-alive (recommended)**
+- The app includes a background task that pings `/health` every 10 minutes
+- Set the `RENDER_SERVICE_URL` environment variable to your service URL
+- Example: `RENDER_SERVICE_URL=https://your-app.onrender.com`
+
+**Option 2: Use external monitoring service**
+- Use a free service like [UptimeRobot](https://uptimerobot.com/) or [cron-job.org](https://cron-job.org/)
+- Set up a monitor to ping `https://your-app.onrender.com/health` every 10-14 minutes
+- This keeps your server active without using server resources
+
+**Option 3: Configure Render Health Check**
+- In Render dashboard, go to your service settings
+- Set Health Check Path to `/health`
+- Render will ping this endpoint periodically
+
+### Frontend Deployment
+
+1. Create a new Static Site on Render
+2. Connect your GitHub repository
+3. Configure:
+   - **Build Command**: `cd frontend && npm install && npm run build`
+   - **Publish Directory**: `frontend/dist`
+4. Update API URL in `frontend/src/services/api.js` to point to your backend URL
+
 ## Notes
 
 - SKU matching is case-insensitive
 - Duplicate SKUs in CSV will overwrite existing products
 - Webhooks are triggered for product create, update, and delete events
 - The application does not require authentication (as per requirements)
+- Health check endpoint available at `/health` for monitoring
 
